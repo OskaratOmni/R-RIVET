@@ -1,0 +1,136 @@
+---
+knit: pagedown::chrome_print
+output:
+  pagedown::html_paged:
+    self_contained: TRUE
+    number_sections: FALSE
+    fig_caption: TRUE
+    css: ["css/simple-report-style.css", "css/simple-report-page.css", "css/simple-report-default.css"]
+paged-footnotes: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      erro= FALSE,
+                      fig.topcaption = TRUE,
+                      fig.cap = TRUE,
+                      dpi = 150)
+
+library(tidyverse)
+library(flextable)
+library(knitr)
+library(omni)
+library(scales)
+library(kableExtra)
+library(readxl)
+
+
+```
+
+```{r, include=FALSE}
+
+#units of impact table
+df_rivet_measures <- read_xlsx("../NPX_Rivet_Units of Impact Table.xlsx")
+
+#update date
+df_rivet_clean <- read_csv("Rivet_Y1_ImpactAudit_Dec2021_Clean.csv", na = "NA") 
+
+#remove reasons
+df_rivet_removed <- read_csv("Rivet_Y1_ImpactAudit_Dec2021_Removed.csv")
+
+```
+
+```{r, include=FALSE}
+# prep data for report 
+
+#Create dataframe with the count 
+df_rivet_count <- df_rivet_clean %>%
+  summarise(count = n()) %>% 
+  mutate(`Unit of Impact` = "Graduates") %>% 
+  rename(`Number Achieved` = count) %>% 
+  select(`Unit of Impact`, `Number Achieved`)
+
+```
+
+# Rivet School Impact Audit Report
+
+<center><b>Impact Period: January 1, 2021 – October 31, 2021</b></center>
+
+Bay Area Hybrid College Initiative dba Rivet School (“Rivet School”), is a nonprofit located in California that supports traditionally underserved students by offering an accredited online degree program in partnership with Southern New Hampshire University, as well as personal coaching, financial aid, career planning, and a community of peers. In 2021, Rivet School raised $850,000 in an Impact Security and recoverable grants to support students' completion of bachelor's degrees (the “Project”). The goal of the Project is to maximize impact and align and incentivize donors, Rivet School, and impact investors (including recoverable grantors) towards the same impact goals. 
+
+Impact investors provided capital to support the attainment of specific Units of Impact. Simultaneously, donors have placed donations into a Donor Impact Fund that are tied to the same Units of Impact. At the end of each impact period, funds are released from the Donor Impact Fund to the nonprofit based on the number of Units of Impact achieved. The nonprofit uses these funds to repay the investors, with the potential for investors to achieve a rate of return. The Rivet School Impact Security and recoverable grants will cover the first 75 enrollees in Rivet School as of January 1, 2021 who graduate between January 1, 2021 and October 31, 2025, except those students participating in the Rivet School Bridge Program. 
+
+This impact audit report covers the impact period from January 1, 2021 to October 31, 2021. The impact audit report was prepared by OMNI Institute, the evaluator for the Impact Security. OMNI is a Colorado-based nonprofit social science consultancy that provides integrated research, evaluation, and capacity building to foster understanding, guide collaboration, and inform action to accelerate positive social change.
+
+The following table summarizes the Unit of Impact that is being measured for the impact audit:
+
+```{r fig.cap="Title", out.extra='data-prefix="Table"', message=FALSE}
+
+df_rivet_measures %>% 
+  kable(escape = F, align = c("l", "l", "l"), table.attr = "style='width:100%;'") %>%
+  kable_styling(position = "left",
+                bootstrap_options = c("striped", "condensed"),
+                font_size = 14,) %>%
+  column_spec(1, width = "3em") %>%
+  column_spec(2, width = "15em") %>% 
+  column_spec(3, width = "8em") %>% 
+  row_spec(0, background = "#314160", color = "white", align = "left")
+
+```
+
+\newpage
+
+The following table summarizes the results of the impact audit:
+
+```{r fig.cap="Title", out.extra='data-prefix="Table"', message=FALSE}
+
+# indicator table
+df_rivet_count %>% 
+  kable(align = c("l", "c"), table.attr = "style='width:100%;'") %>% 
+  kable_styling(position = "left",
+                bootstrap_options = c("striped", "condensed"),
+                font_size = 14,) %>%
+  column_spec(1, width = "7") %>% 
+  column_spec(2, width = "10em") %>% 
+  row_spec(0, background = "#314160", color = "white", align = "left")
+
+```
+
+<br>
+
+<h1>Technical Appendix</h1>
+
+To prepare for the impact audit, Rivet School submitted case-level data extracts and a data dictionary to OMNI in July and August 2021. The data extracts included all relevant data collected to date and the data dictionary provided information about the variables included in the data extracts. OMNI reviewed the data extracts and the data dictionary to understand the data structure, address any data quality concerns, and identify the variables that should be used for the impact audit. 
+
+In November 2021, Rivet School submitted the official data for the impact audit. The data file included 12 variables and 44 cases. The file was in the same format as the data extract that was shared in August. The file contains internal Rivet School records as well as information from Southern New Hampshire University (SNHU). SNHU provides Rivet School with access to a shared Microsoft PowerBI database where Rivet staff can access completion data, student records, and project feedback. The SNHU data is exported from the database and combined with Rivet School’s internal records. Rivet School uses formulas and unique identifiers to merge the two datasets into a single spreadsheet that is housed in Google Sheets. The data file that was provided to OMNI is a subset of relevant fields from this spreadsheet. Rivet School utilizes centralized data handling, automated formulas, and team norms with manager oversight related to inputting data to ensure a high level of data quality.
+
+OMNI staff reviewed the data and conducted data quality checks (e.g., responses outside of possible ranges, duplicated cases) using R. OMNI then filtered the data based on the below criteria.
+
+To count towards the impact metric, a student must meet the following criteria:
+
+-	Have enrolled in Rivet School after January 1, 2021.
+-	Have a county of residence in the Greater Bay Area - Alameda, Contra Costa, Marin, Napa, Sacramento, San Francisco, San Joaquin, San Mateo, Santa Clara, Santa Cruz, Solano, Sonoma, or Stanislaus County.
+- Have completed their bachelor’s degree. Students working towards their associate degree are not included in the metric.
+-	Have graduated between January 1, 2021 and October 31, 2025.
+
+\newpage
+
+Based on the criteria above, 43 of 44 cases were excluded from the impact metric for the following reasons:
+
+```{r fig.cap="Title", out.extra='data-prefix="Table"', message=FALSE}
+# Reason for Removal Table
+
+df_rivet_removed %>% 
+  kable(align = "lc", table.attr = "style='width:94%;'") %>% 
+  kable_styling(position = "left",
+                bootstrap_options = c("striped", "condensed"),
+                font_size = 14,) %>%
+  column_spec(1, width = "10") %>% 
+  column_spec(2, width = "9.5em") %>% 
+  row_spec(0, background = "#314160", color = "white", align = "left") %>% 
+  row_spec(6, bold = TRUE) 
+
+```
+
+The remaining sample was counted to obtain the number of students that met the impact metric definition. This number is reported in the table that summarizes the results of the impact audit. Some cases that were excluded may count towards the impact metric definition in a future audit if they meet the criteria at that time. 

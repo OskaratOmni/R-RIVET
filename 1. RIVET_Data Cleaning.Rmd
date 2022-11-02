@@ -1,0 +1,186 @@
+---
+title: "NPX - RIVET: Cleaning and Analysis"
+author: "Your Name"
+date: "`r format(Sys.Date(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## File Description
+
+This file was created by Alex Haffner 9/14/21, and updated by Elaine Maskus October 2021. It prepares data from Rivet School for audit reporting as part of the NPX project.
+
+
+```{r packages, message = FALSE, warning=FALSE}
+
+library(tidyverse) 
+library(openxlsx) 
+library(janitor) 
+library(summarytools) 
+library(readxl)
+library(dplyr)
+
+```
+
+## Loading Data
+
+```{r data, echo=TRUE, eval = TRUE}
+
+# excel data
+# df_rivet <- read_xlsx("../Secure/Rivet_Y1_ImpactAudit_211101.xlsx", sheet=1, na = "--") %>%
+  # clean_names()
+
+# csv data
+df_rivet <- read_csv("../Secure/Rivet_Y2_InterimAudit_220708.csv", na = c("","N/A","")) %>%
+  clean_names()
+
+# delete empty rows
+df_rivet <- df_rivet %>% 
+  filter(!is.na(first_name))
+#68 cases
+
+```
+
+## Data Frame Summary and Data Quality Check
+
+Run dfSummary and look at output - look for any outliers or non-standard values
+
+```{r}
+
+view(dfSummary(df_rivet))
+
+```
+
+Check for duplicates
+
+```{r}
+
+dup_check <- distinct(df_rivet, school_id, .keep_all = T)
+# no dups
+
+```
+
+clean county of residence
+```{r}
+
+freq(df_rivet$county_of_residence)
+
+df_rivet <- df_rivet %>% 
+  mutate(county_of_residence = case_when(
+    county_of_residence == 'Alameda' ~ 'Alameda County',
+    county_of_residence == 'San juaquin' ~ 'San Joaquin County',
+    county_of_residence == 'San Francisco' ~ 'San Francisco County',
+    county_of_residence == 'Santa Clara' ~ 'Santa Clara County',
+    T ~ county_of_residence
+  ))
+
+
+freq(df_rivet$county_of_residence)
+
+```
+
+
+## Filter Data File
+
+This step filters the file to include only records of interest.
+- enrolled after Jan 2021
+- working towards a Bachelors
+- in county of interest
+- graduated 
+
+```{r, echo = T}
+
+# creating filter for counties of interest
+filter_counties <- c("Alameda County", 
+                     "Contra Costa County", 
+                     "Marin County", 
+                     "Napa County",
+                     "Sacramento County", 
+                     "San Francisco County", 
+                     "San Joaquin County", 
+                     "San Mateo County", 
+                     "Santa Clara County", 
+                     "Santa Cruz County", 
+                     "Solano County", 
+                     "Sonoma County",
+                     "Stanislaus County")
+
+#with graduate filter
+df_rivet_fg <- df_rivet %>%
+      filter(enrollment_date > "01/01/2021") %>% 
+      filter(degree_type == "BA") %>% 
+      filter(county_of_residence %in% filter_counties) %>% 
+      filter(enrollment_status == "5 BA Grad")
+
+# select only counties of interest
+freq(df_rivet_fg$county_of_residence)
+
+
+```
+
+## Create df with info on removed / filtered out cases
+
+```{r}
+
+#enrolled after 1/1/21 - for july  22 audit, no one
+freq(df_rivet$enrollment_date)
+
+e <- 0 #assign count to 0 since none fall out of range
+
+#working towards aa not ba
+freq(df_rivet$degree_type)
+
+freak <- freq(df_rivet$degree_type) #creates df of frequency table
+aa <- freak[1,1] 
+
+#not in correct county of residence - for july  22 audit, 1 person in Merced County
+freq(df_rivet$county_of_residence)
+
+c <- 1 #assign count since data are messy
+
+#not yet graduated - only counting active and paused
+freak <-
+  df_rivet %>% 
+  filter(degree_type == "BA") %>% 
+  freq(enrollment_status)
+
+wd <- freak[3,1]  #count of withdrawn students
+a <- freak[1,1] #count of active students
+p <- freak[2,1] #count of paused students
+
+g <- sum(a,p) #combine active and paused students
+
+
+t <- sum(e,c,aa,g) #total number removed
+
+# create df with above values
+way <- c("Student enrolled before January, 1 2021", 'Student lives outside of the Greater Bay Area region', "Student is not currently pursuing a bachelor's degree", 'Student has not yet graduated', 'Student has withdrawn from program', 'Total Removed')
+count <- c(e,c,aa,g,wd,t)
+
+removed <- as.data.frame(way)
+removed$Count <- count
+removed <- rename(removed, 'Reason for Removal' = way,
+                  'Number Removed' = Count)
+
+```
+
+## Save df's for reporting
+
+**BEFORE SAVING** make sure total number of cases removed + number of cases in df_rivet_fg = total number of cases in file
+
+```{r, echo = T}
+#data file 
+write_csv(df_rivet_fg, "Rivet_Y1_ImpactAudit_Dec2021_Clean.csv") #update date
+
+#removal reason file
+write_csv(removed,"Rivet_Y1_ImpactAudit_Dec2021_Removed.csv") #update date
+
+```
+
