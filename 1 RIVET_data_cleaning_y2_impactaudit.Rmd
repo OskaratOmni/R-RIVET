@@ -1,0 +1,309 @@
+---
+title: "NPX - RIVET: Cleaning and Analysis"
+author: "Your Name"
+date: "`r format(Sys.Date(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## File Description
+
+This file was created by Alex Haffner 9/14/21, updated by Elaine Maskus October 2021, and updated again by Oskar in November 2022. It prepares data from Rivet School for audit reporting as part of the NPX project.
+
+Input: 
+
+ - 'raw' data file: as received from client and stored in Secure dropbox folder 
+ 
+Ouput: 
+
+ - 'clean' data file for use in reporting and saved in data folder of root project directory 
+ 
+
+
+
+```{r packages, message = FALSE, warning=FALSE}
+
+library(tidyverse) 
+library(openxlsx) 
+library(janitor) 
+library(summarytools) 
+library(readxl)
+library(dplyr)
+
+```
+
+## Loading Data
+
+```{r data, echo=TRUE, eval = TRUE}
+# excel data
+# df_rivet <- read_xlsx("../Secure/Rivet_Y1_ImpactAudit_211101.xlsx", sheet=1, na = "--") %>%
+  # clean_names()
+
+# we received a second version of the data from Alex
+# csv data
+df_rivet_raw <- read_csv("../Secure/Rivet Yr 2 official audit/NPX Fellows Tracker - Sheet6 Alex.csv", na = c("","N/A","")) %>%
+  clean_names() |>
+  mutate(enrollment_date = lubridate::mdy(enrollment_date))
+```
+
+## check for cases from previous audit 
+
+```{r}
+rivet_yr1_df = read.csv("Rivet_Y1_ImpactAudit_Dec2021_Clean.csv") 
+# confirm this individual was reported in previous year before filtering 
+df_rivet_dedup = df_rivet_raw |> 
+  filter(last_name != rivet_yr1_df$last_name & first_name != rivet_yr1_df$first_name)
+# check filtering removed the right cases 
+# dim(df_rivet_raw)
+# dim(df_rivet_dedup)
+# for table down below 
+reported_out = df_rivet_raw |> 
+  filter(last_name == rivet_yr1_df$last_name & first_name == rivet_yr1_df$first_name) |>
+  nrow()
+```
+
+
+```{r data, echo=TRUE, eval = TRUE}
+# delete empty rows
+#df_rivet <- df_rivet %>% 
+#  filter(!is.na(first_name))
+#68 cases
+
+# remove identifying columns: 
+
+df_rivet = df_rivet_dedup |>
+  select(-first_name, -last_name, -email_address, -dob) |>
+  mutate(id = seq(1,nrow(df_rivet_dedup))) |>
+  relocate(id, everything())
+```
+
+## Data Frame Summary and Data Quality Check
+
+Run dfSummary and look at output - look for any outliers or non-standard values
+
+```{r}
+
+view(dfSummary(df_rivet))
+
+```
+
+Check for duplicates
+
+```{r}
+df_rivet |> janitor::get_dupes()
+# no dupes 
+```
+
+clean county of residence
+```{r}
+
+table(df_rivet$county_of_residence)
+
+df_rivet <- df_rivet %>% 
+  mutate(county_of_residence = case_when(
+    county_of_residence == 'Alameda' ~ 'Alameda County',
+   # county_of_residence == 'San juaquin' ~ 'San Joaquin County',
+    county_of_residence == 'San Francisco' ~ 'San Francisco County',
+    county_of_residence == 'Santa Clara' ~ 'Santa Clara County',
+    T ~ county_of_residence
+  ))
+
+
+table(df_rivet$county_of_residence)
+
+```
+
+
+## Filter Data File
+
+This step filters the file to include only records of interest.
+- enrolled after Jan 2021
+- working towards a Bachelors
+- in county of interest
+- graduated 
+
+```{r, echo = T}
+
+# creating filter for counties of interest
+filter_counties <- c("Alameda County", 
+                     "Contra Costa County", 
+                     "Marin County", 
+                     "Napa County",
+                     "Sacramento County", 
+                     "San Francisco County", 
+                     "San Joaquin County", 
+                     "San Mateo County", 
+                     "Santa Clara County", 
+                     "Santa Cruz County", 
+                     "Solano County", 
+                     "Sonoma County",
+                     "Stanislaus County")
+
+#with graduate filter
+df_rivet_fg <- df_rivet %>%
+      filter(enrollment_date > "01/01/2021",
+             degree_type == "BA",
+             county_of_residence %in% filter_counties,
+             enrollment_status == "5 BA Grad")
+
+# select only counties of interest
+# freq(df_rivet_fg$county_of_residence)
+
+
+```
+
+## Create df with info on removed / filtered out cases
+
+```{r}
+
+# find those enrolled outside of defined period: 
+# from January 1, 2021  to October 31, 2025
+ 
+e_out = df_rivet |>
+  filter(enrollment_date <= as.Date("2021-01-01") | enrollment_date >= as.Date("2025-10-31")) |>
+  select(id) |> n_distinct()
+
+# e <- 0 #assign count to 0 since none fall out of range
+
+#working towards aa not ba
+table(df_rivet$degree_type)
+# 
+# freak <- freq(df_rivet$degree_type) #creates df of frequency table
+# aa <- freak[1,1] 
+
+aa_out = df_rivet |>
+  filter(degree_type == "AA") |>
+ nrow()
+
+#not in correct county of residence - for july  22 audit, 1 person in Merced County
+# freq(df_rivet$county_of_residence)
+
+c_out = df_rivet |>
+  filter(!county_of_residence %in% filter_counties) |>
+  nrow()
+
+#not yet graduated - only counting active and paused
+active_out =
+  df_rivet %>% 
+  filter(degree_type == "BA",
+         enrollment_status %in% c("1 Active")) %>% 
+  nrow()
+  
+paused_out = 
+df_rivet %>% 
+  filter(degree_type == "BA",
+         enrollment_status %in% c("3 Paused A", "3 Paused B")) %>% 
+  nrow()
+
+withdrawn_out = 
+df_rivet %>% 
+  filter(degree_type == "BA",
+         enrollment_status %in% c("4 Withdrawn")) %>% 
+  nrow()  
+
+total_out <- sum(e_out,aa_out,c_out,active_out, paused_out, withdrawn_out) #total number removed
+
+# create df with above values
+way <- c("Student enrolled before January 1, 2021 or after October 31, 2025", 
+         "Student lives outside of the Greater Bay Area region", 
+         "Student is not currently pursuing a bachelor's degree", 
+         'Student is active but has not yet graduated', 
+         "Student has paused progress and not yet graduated", 
+         'Student has withdrawn from program', 
+         'Total Excluded')
+#count <- c(e,c,aa,g,wd,t)
+
+excluded <- as.data.frame(way) |>
+  mutate(`Number Excluded` = c(e_out, c_out, aa_out, active_out, paused_out, withdrawn_out, total_out)) |> rename('Reason for Exclusion' = way)
+
+```
+
+```{r}
+# code each case by exclusion criteria:
+df_rivet = df_rivet |>
+  mutate(
+    e_out = if_else((enrollment_date <= as.Date("2021-01-01") | enrollment_date >= as.Date("2025-10-31")), 1, 0), # enrollment out of date range 
+    aa_out = if_else(degree_type == "AA", 1, 0), # wrong degree type
+    c_out = if_else(!county_of_residence %in% filter_counties, 1, 0), # county out of region 
+    active_out = if_else(degree_type == "BA"     & enrollment_status %in% c("1 Active"), 1, 0), # not graduated, active
+    paused_out = if_else(degree_type == "BA"     & enrollment_status %in% c("3 Paused A", "3 Paused B"), 1, 0),
+    withdrawn_out = if_else(degree_type == "BA"  & enrollment_status %in% c("4 Withdrawn"), 1, 0)
+    )
+
+e_out_df = df_rivet |>
+  filter(e_out == 1)
+
+c_out_df = df_rivet |>
+  filter(!id %in% c(e_out_df$id), #ids from previous step to avoid double counting
+         c_out == 1) # condition
+
+aa_out_df = df_rivet |> 
+  filter(!id %in% c(e_out_df$id, c_out_df$id), #ids from previous step to avoid double counting
+         aa_out == 1) # condition for filter 
+
+active_out_df = df_rivet |>
+  filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id),
+         active_out == 1)
+
+pause_out_df = df_rivet |>
+  filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id, active_out_df$id),
+         paused_out == 1)
+
+withdrawn_out_df = df_rivet |>
+  filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id, 
+            active_out_df$id, pause_out_df$id),
+         withdrawn_out == 1)
+
+ex_out_vec = c(nrow(e_out_df), 
+               nrow(c_out_df), 
+               nrow(aa_out_df), 
+               nrow(active_out_df), 
+               nrow(pause_out_df), 
+               nrow(withdrawn_out_df))
+
+excluded2 = as.data.frame(way) |>
+  mutate(`Number Excluded` = c(ex_out_vec,
+                                sum(ex_out_vec))) |> 
+           rename('Reason for Exclusion' = way)
+
+# excluded2 is better bc it avoids double counting,
+# but note that order that they are calculated will affect the totals 
+# how many individuals excluded for more than 1 reason?
+multiple_exclusions = df_rivet |>
+  mutate(condition_sum = rowSums(across(e_out:withdrawn_out))) |>
+  filter(condition_sum >= 2)
+nrow(multiple_exclusions)
+```
+
+
+## Save df's for reporting
+
+**BEFORE SAVING** make sure total number of cases removed + number of cases in df_rivet_fg = total number of cases in file
+
+```{r}
+# this asks if the exclusions plus the individuals in the impact metric plus the individuals removed bc they were in last years data add up to the number of cases in the raw data set
+
+(sum(ex_out_vec) + nrow(df_rivet_fg)+ reported_out) == nrow(df_rivet_raw)
+# if returns FALSE, stop and figure out why these numbers aren't the same
+
+```
+
+
+```{r, echo = T}
+#data file 
+write_csv(df_rivet_fg, "data/RIVET_y2_impact_audit_nov2022_clean.csv") #update date
+
+#removal reason file
+write_csv(excluded2,"data/RIVET_y2_impact_audit_nov2022_excluded.csv") #update date
+
+```
+
