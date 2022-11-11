@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## File Description
 
-This file was created by Alex Haffner 9/14/21, updated by Elaine Maskus October 2021, and updated again by Oskar in November 2022. It prepares data from Rivet School for audit reporting as part of the NPX project.
+This file was created by Alex Haffner in September 2021, updated by Elaine Maskus in October 2021, and updated again by Oskar in November 2022. It prepares data from Rivet School for audit reporting as part of the NPX project.
 
 Input: 
 
@@ -27,7 +27,7 @@ Ouput:
 
  - 'clean' data file for use in reporting and saved in data folder of root project directory 
  
-
+ - tables of impact metrics and exclusion criteria 
 
 
 ```{r packages, message = FALSE, warning=FALSE}
@@ -228,15 +228,15 @@ excluded <- as.data.frame(way) |>
 ```
 
 ```{r}
-# code each case by exclusion criteria:
+# code each case by exclusion criteria (create binaries for if each case is excluded or not based on each exclusion criteria):
 df_rivet = df_rivet |>
   mutate(
     e_out = if_else((enrollment_date <= as.Date("2021-01-01") | enrollment_date >= as.Date("2025-10-31")), 1, 0), # enrollment out of date range 
     aa_out = if_else(degree_type == "AA", 1, 0), # wrong degree type
     c_out = if_else(!county_of_residence %in% filter_counties, 1, 0), # county out of region 
     active_out = if_else(degree_type == "BA"     & enrollment_status %in% c("1 Active"), 1, 0), # not graduated, active
-    paused_out = if_else(degree_type == "BA"     & enrollment_status %in% c("3 Paused A", "3 Paused B"), 1, 0),
-    withdrawn_out = if_else(degree_type == "BA"  & enrollment_status %in% c("4 Withdrawn"), 1, 0)
+    paused_out = if_else(degree_type == "BA"     & enrollment_status %in% c("3 Paused A", "3 Paused B"), 1, 0), # not graduated, paused
+    withdrawn_out = if_else(degree_type == "BA"  & enrollment_status %in% c("4 Withdrawn"), 1, 0) # not graduated, withdrawn
     )
 
 e_out_df = df_rivet |>
@@ -251,12 +251,12 @@ aa_out_df = df_rivet |>
          aa_out == 1) # condition for filter 
 
 active_out_df = df_rivet |>
-  filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id),
-         active_out == 1)
+  filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id), #ids from previous step to avoid double counting
+         active_out == 1)  # condition for filter
 
 pause_out_df = df_rivet |>
-  filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id, active_out_df$id),
-         paused_out == 1)
+  filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id, active_out_df$id), #ids from previous step to avoid double counting
+         paused_out == 1) # condition for filter
 
 withdrawn_out_df = df_rivet |>
   filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id, 
@@ -290,7 +290,11 @@ nrow(multiple_exclusions)
 **BEFORE SAVING** make sure total number of cases removed + number of cases in df_rivet_fg = total number of cases in file
 
 ```{r}
-# this asks if the exclusions plus the individuals in the impact metric plus the individuals removed bc they were in last years data add up to the number of cases in the raw data set
+# this asks if:
+# (exclusions) + 
+# (individuals in the impact metric) + 
+# (individuals removed bc they were in last years data) = 
+# (number of cases in the raw data set)
 
 (sum(ex_out_vec) + nrow(df_rivet_fg)+ reported_out) == nrow(df_rivet_raw)
 # if returns FALSE, stop and figure out why these numbers aren't the same

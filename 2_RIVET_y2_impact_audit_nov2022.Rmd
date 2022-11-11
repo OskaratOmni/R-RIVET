@@ -59,8 +59,7 @@ df_rivet_count <- df_rivet_clean %>%
 
 <center><b>Impact Period: January 1, 2022 – October 31, 2022</b></center>
 
-Bay Area Hybrid College Initiative dba Rivet School (“Rivet School”), is a nonprofit
-located in California that supports traditionally under-served students by offering an accredited online degree program in partnership with Southern New Hampshire University, personal coaching, financial aid, career planning, and a community of peers. In 2021, Rivet School raised $850,000 in an Impact Security and recoverable grant to support students' completion of bachelor's degrees (the “Project”). The goal of the Project align and incentivize donors, Rivet School, and impact investors (including recoverable grantors) towards the same impact goals while maximizing impact. 
+Bay Area Hybrid College Initiative dba Rivet School (“Rivet School”), is a nonprofit located in California that supports traditionally under-served students by offering an accredited online degree program in partnership with Southern New Hampshire University, as well as personal coaching, financial aid, career planning, and a community of peers. In 2021, Rivet School raised $850,000 in an Impact Security and recoverable grant to support students' completion of bachelor's degrees (the “Project”). The goal of the Project is to align and incentivize donors, Rivet School, and impact investors (including recoverable grantors) towards the same impact goals while maximizing impact. 
 
 Impact investors provided capital to support the attainment of specific Units of Impact. Simultaneously, donors placed donations into a Donor Impact Fund that are tied to the same Units of Impact. At the end of each impact period, funds are released from the Donor Impact Fund to the nonprofit based on the number of Units of Impact achieved. The nonprofit uses these funds to repay the investors, with the potential for investors to achieve a rate of return. The Rivet School Impact Security and recoverable grant will cover the first 75 enrollees in Rivet School as of January 1, 2021 who graduate between January 1, 2021 and October 31, 2025, except those students participating in the Rivet School Bridge Program. 
 
@@ -85,7 +84,7 @@ df_rivet_measures %>%
 ```
 
 
-Table 2 summarizes the results of the impact audit:
+Table 2 summarizes the results of the Impact Audit:
 
 ```{r fig.cap="Title", out.extra='data-prefix="Table"', message=FALSE}
 
@@ -106,22 +105,22 @@ df_rivet_count %>%
 
 <h1>Technical Appendix</h1>
 
-To prepare for the impact audit, Rivet School submitted case-level data extracts to OMNI in June and July of 2022. The data extracts included all relevant data collected to date. A data dictionary provided in 2021 provided information about the variables included in the data extracts. OMNI reviewed the data extracts and the data dictionary to understand the data structure, address any data quality concerns, and identify the variables that should be used for the Impact Audit. 
+To prepare for the Impact Audit, Rivet School submitted case-level data extracts to OMNI in June and July of 2022. The data extracts included all relevant data collected to date. A data dictionary provided in 2021 provided information about the variables included in the data extracts. OMNI reviewed the data extracts and the data dictionary to understand the data structure, address any data quality concerns, and identify the variables that should be used for the Impact Audit. 
 
 In November 2022, Rivet School submitted the official data for the impact audit. The data file included 15 variables and 74 cases. The file was in the same format as the data extract that was shared in July. The file contains internal Rivet School records as well as information from Southern New Hampshire University (SNHU). SNHU provides Rivet School with access to a shared Microsoft PowerBI database where Rivet staff can access completion data, student records, and project feedback. The SNHU data are exported from the database and combined with Rivet School’s internal records. Rivet School uses formulas and unique identifiers to merge the two datasets into a single spreadsheet that is housed in Google Sheets. The data file that was provided to OMNI is a subset of relevant fields from this spreadsheet. Rivet School utilizes centralized data handling, automated formulas, and team norms with manager oversight related to inputting data to ensure a high level of data quality.
 
-OMNI staff reviewed the data and conducted data quality checks (e.g., responses outside of possible ranges, duplicated cases) using R. OMNI then filtered the data based on the below criteria.
+OMNI staff reviewed the data and conducted data quality checks. These checks included checking for values outside of the ranges for variable definitions, removing duplicated cases, and verifying that all variables were internally consistent and valid. 
 
-To count towards the impact metric, a student must meet the following criteria:
+To count towards the Impact Metric, a student must meet the following criteria:
 
 -	Have enrolled in Rivet School after January 1, 2021.
 -	Have a county of residence in the Greater Bay Area - Alameda, Contra Costa, Marin, Napa, Sacramento, San Francisco, San Joaquin, San Mateo, Santa Clara, Santa Cruz, Solano, Sonoma, or Stanislaus County.
-- Have completed their bachelor’s degree. Students working towards their associate degree are not included in the metric.
+- Have completed their bachelor’s degree. Students working towards their associate degree are not included in the Impact Metric.
 -	Have graduated between January 1, 2021 and October 31, 2025.
 
 \newpage
 
-Based on the criteria above, 72 of 74 cases were excluded from the Impact Metric for the following reasons:
+Based on the criteria above, 71 of 74 cases were excluded from the Impact Metric (Table 3).
 
 ```{r fig.cap="Title", out.extra='data-prefix="Table"', message=FALSE}
 # Reason for Removal Table
@@ -136,9 +135,8 @@ df_rivet_removed %>%
   column_spec(2, width = "9.5em") %>% 
   row_spec(0, background = "#314160", color = "white", align = "left") %>% 
   row_spec(7, bold = TRUE) 
-
 ```
 
-In addition to the 71 students listed in Table 3 who were excluded from counting toward the Impact Metric for not meeting the criteria, one additional student was excluded because they were reported in the Year 1 Impact Audit. Two of the 71 cases met two of the exclusion criteria. 
+In addition to the 72 students listed in Table 3 who were excluded from counting toward the Impact Metric for not meeting the criteria, one additional student was excluded because they were reported in the Year One Impact Audit. Two of the 71 cases met two of the exclusion criteria. 
 
 The remaining sample was counted to obtain the number of students that met the impact metric definition. This number is reported in Table 2. Some cases that were excluded may count towards the impact metric definition in a future audit if they meet the criteria at that time. 
