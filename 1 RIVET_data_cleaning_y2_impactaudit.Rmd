@@ -284,6 +284,48 @@ multiple_exclusions = df_rivet |>
 nrow(multiple_exclusions)
 ```
 
+## make cumulative reporting table
+
+
+
+```{r}
+# cumulative reporting table
+
+# year 1 impact count: 
+ngrad_yr1 = rivet_yr1_df |> nrow()
+
+#  year 2 impact count: 
+ngrad_yr2 = df_rivet_fg |> nrow()
+  
+# cumulative 
+ngrad_total = ngrad_yr1 + ngrad_yr2
+
+# make cumulative table for report 
+cumulative = tibble(
+  `Reporting Year` = 
+    # c("Year 1: January 1, 2021 – June 30, 2021",
+    #   "Year 2: July 1, 2021 – June 30, 2022",
+    #   "**Total**"),
+      c("Year 1",
+      "Year 2",
+      "**Total**"),
+  `Number of Graduates` = 
+    c(ngrad_yr1, ngrad_yr2, ngrad_total)
+)
+
+
+# create workbook ----
+cumulative_out =  createWorkbook()
+
+# add worksheet ----
+addWorksheet(cumulative_out, sheetName = "RIVET_cumulative")
+# add data 
+writeDataTable(cumulative_out, sheet = "RIVET_cumulative", x = cumulative, tableStyle = "none")
+# save workbook ----
+saveWorkbook(cumulative_out, "data/NPX_RIVET_cumulative_yr2_audit.xlsx", overwrite = TRUE)
+
+```
+
 
 ## Save df's for reporting
 
