@@ -36,13 +36,13 @@ library(readxl)
 df_rivet_measures <- read_xlsx("../NPX_Rivet_Units of Impact Table.xlsx")
 
 #update date
-df_rivet_clean <- read_csv("data/RIVET_y2_impact_audit_nov2022_clean.csv", na = "NA") 
+df_rivet_clean <- read_csv("data/RIVET_y3_interim_audit_july2023_clean.csv", na = "NA") 
 
 #remove reasons
-df_rivet_removed <- read_csv("data/RIVET_y2_impact_audit_nov2022_excluded.csv")
+df_rivet_removed <- read_csv("data/RIVET_y3_impact_audit_july2022_excluded.csv")
 
 # for cumulative reporting
-df_rivet_cumulative <- openxlsx::read.xlsx("data/NPX_RIVET_cumulative_yr2_audit.xlsx", sep.names = " ")
+df_rivet_cumulative <- openxlsx::read.xlsx("data/NPX_RIVET_cumulative_yr3_audit.xlsx", sep.names = " ")
 
 
 ```
@@ -61,13 +61,13 @@ df_rivet_count <- df_rivet_clean %>%
 
 # Rivet School Year Two Impact Audit Report
 
-<center><b>Impact Period: January 1, 2022 – October 31, 2022</b></center>
+<center><b>Impact Period: January 1, 2023 – October 31, 2023</b></center>
 
 Bay Area Hybrid College Initiative dba Rivet School (“Rivet School”), is a nonprofit located in California that supports traditionally under-served students by offering an accredited online degree program in partnership with Southern New Hampshire University, as well as personal coaching, financial aid, career planning, and a community of peers. In 2021, Rivet School raised $850,000 in an Impact Security and recoverable grant to support students' completion of bachelor's degrees (the “Project”). The goal of the Project is to align and incentivize donors, Rivet School, and impact investors (including recoverable grantors) towards maximizing the same impact goals. 
 
 Impact investors provided capital to support the attainment of specific Units of Impact. Simultaneously, donors placed donations into a Donor Impact Fund that are tied to the same Units of Impact. At the end of each impact period, funds are released from the Donor Impact Fund to the nonprofit based on the number of Units of Impact achieved. The nonprofit uses these funds to repay the investors, with the potential for investors to achieve a rate of return. The Rivet School Impact Security and recoverable grant will cover the first 75 enrollees in Rivet School as of January 1, 2021 who graduate between January 1, 2021 and October 31, 2025, except those students participating in the Rivet School Bridge Program. 
 
-This Impact Audit covers the Year Two Impact Period, from January 1, 2022 to October 31, 2022. This Impact Audit was prepared by OMNI Institute, the evaluator for the Impact Security. OMNI is a Colorado-based nonprofit social science consultancy that provides integrated research, evaluation, and capacity building to foster understanding, guide collaboration, and inform action to accelerate positive social change.
+This Impact Audit covers the Year Two Impact Period, from January 1, 2022 to October 31, 2022. It was prepared by OMNI Institute, the evaluator for the Impact Security. OMNI is a Colorado-based nonprofit social science consultancy that provides integrated research, evaluation, and capacity building to foster understanding, guide collaboration, and inform action to accelerate positive social change.
 
 <!-- \newpage  -->
 
@@ -111,9 +111,9 @@ df_rivet_count %>%
 
 To prepare for the Impact Audit, Rivet School submitted case-level data extracts to OMNI in June and July of 2022. The data extracts included all relevant data collected to date. A data dictionary provided in 2021 provided information about the variables included in the data extracts. OMNI reviewed the data extracts and the data dictionary to understand the data structure, address any data quality concerns, and identify the variables that should be used for the Impact Audit. 
 
-In November 2022, Rivet School submitted the official data for the Impact Audit. The data file includes 15 variables and 74 cases. The file is in the same format as the data extract that was shared in July. The file contains internal Rivet School records as well as information from Southern New Hampshire University (SNHU). SNHU provides Rivet School with access to a shared Microsoft PowerBI database where Rivet staff can access completion data, student records, and project feedback. The SNHU data are exported from the database and combined with Rivet School’s internal records. Rivet School uses formulas and unique identifiers to merge the two datasets into a single spreadsheet that is housed in Google Sheets. The data file that was provided to OMNI is a subset of relevant fields from this spreadsheet. Rivet School utilizes centralized data handling, automated formulas, and team norms with manager oversight related to inputting data to ensure a high level of data quality.
+In November 2022, Rivet School submitted the official data for the Impact Audit. The data file included 15 variables and 74 cases and was in the same format as the data extract shared in July. After reviewing the first draft of this Impact Audit, Rivet identified two students from outside the Bay Area who should not have been included and replaced these individuals with two other graduates. A new file was submitted on December 8, 2022, which also had 15 variables and 74 cases. The file contains internal Rivet School records as well as information from Southern New Hampshire University (SNHU). SNHU provides Rivet School with access to a shared Microsoft PowerBI database where Rivet staff can access completion data, student records, and project feedback. The SNHU data are exported from the database and combined with Rivet School’s internal records. Rivet School uses formulas and unique identifiers to merge the two datasets into a single spreadsheet that is housed in Google Sheets. The data file that was provided to OMNI is a subset of relevant fields from this spreadsheet. Rivet School utilizes centralized data handling, automated formulas, and team norms with manager oversight related to inputting data to ensure a high level of data quality.
 
-OMNI staff reviewed the data and conducted data quality checks. These included checking for values outside of the ranges for variable definitions, removing duplicated cases, and verifying that all variables were internally consistent and valid. 
+OMNI staff reviewed the data and conducted data quality checks. These included checking for values outside of the ranges for variable definitions, removing duplicated cases, and verifying that all variables were internally consistent and valid.  
 
 OMNI corroborated the enrollment and graduation status for all graduates in this Impact Audit. Rivet School shared verification documents with OMNI for the graduates counted in Table 2. OMNI reviewed these documents to confirm that they aligned with the information included in the data file. 
 
@@ -126,7 +126,8 @@ To count towards the Impact Metric, a student must meet the following criteria:
 
 This report includes students who meet these criteria within the Year Two Impact Period. 
 
-Based on the criteria above, 71 of 74 cases were excluded from the Impact Metric (Table 3). In addition to the 71 students listed in Table 3 who were excluded from counting toward the Impact Metric for not meeting the criteria, one additional student was excluded because they were reported in the Year One Impact Audit. Two of the 71 cases met multiple exclusion criteria. 
+Based on the criteria above, 71 of 74 cases were excluded from the Impact Metric (Table 3). In addition to the 71 students listed in Table 3 who were excluded from counting toward the Impact Metric for not meeting the criteria, one additional student was excluded because they were reported in the Year One Impact Audit. 
+
 
 ```{r fig.cap="Title", out.extra='data-prefix="Table"', message=FALSE}
 # Reason for Removal Table

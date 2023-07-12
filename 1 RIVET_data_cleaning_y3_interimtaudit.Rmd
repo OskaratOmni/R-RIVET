@@ -1,6 +1,6 @@
 ---
 title: "NPX - RIVET: Cleaning and Analysis"
-author: "Your Name"
+author: "Oskar"
 date: "`r format(Sys.Date(), '%d %B, %Y')`"
 output: 
   html_document:
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## File Description
 
-This file was created by Alex Haffner in September 2021, updated by Elaine Maskus in October 2021, and updated again by Oskar in November 2022. It prepares data from Rivet School for audit reporting as part of the NPX project.
+This file was created by Alex Haffner in September 2021, updated by Elaine Maskus in October 2021, updated by Oskar in November 2022, and again by Oskar in July of 2023. It prepares data from Rivet School for audit reporting as part of the NPX project.
 
 Input: 
 
@@ -28,6 +28,15 @@ Ouput:
  - 'clean' data file for use in reporting and saved in data folder of root project directory 
  
  - tables of impact metrics and exclusion criteria 
+
+Impact metrics (from contract): 
+
+Impact measures: 
+
+ - Number of graduates 
+ 
+   - defined as: Students who complete their Baccalaureate by October 31, 2025. 
+   “Students” means the first 75 Rivet School students residing in the Greater Bay Area that enroll in the program beginning January 1, 2021, except those students participating in the Rivet School Bridge Program.“Greater Bay Area” is defined as Alameda, Contra Costa, Marin, Napa, Sacramento, San Francisco, San Joaquin, San Mateo, Santa Clara, Santa Cruz, Solano, Sonoma and Stanislaus counties
 
 
 ```{r packages, message = FALSE, warning=FALSE}
@@ -48,23 +57,29 @@ library(dplyr)
 # df_rivet <- read_xlsx("../Secure/Rivet_Y1_ImpactAudit_211101.xlsx", sheet=1, na = "--") %>%
   # clean_names()
 
-# we received a second version of the data from Alex
-# csv data
-df_rivet_raw <- read_csv("../Secure/Rivet Yr 2 official audit/NPX Fellows Tracker - Sheet6 Alex.csv", na = c("","N/A","")) %>%
+df_rivet_raw = read_xlsx("../Secure/Rivet School Yr 3 Interim Audit/NPX Omni Year 3 Interim Audit Report_07.05.23 Iris Jong.xlsx") %>%
   clean_names() |>
-  mutate(enrollment_date = lubridate::mdy(enrollment_date))
+#  mutate(enrollment_date = lubridate::mdy(enrollment_date)) |>
+  mutate(id = row_number()) |>
+  relocate(id, everything()) 
+
+
+
 ```
 
 ## check for cases from previous audit 
 
 ```{r}
-rivet_yr1_df = read.csv("Rivet_Y1_ImpactAudit_Dec2021_Clean.csv") 
+rivet_yr1_df = read.csv("data/Rivet_Y1_ImpactAudit_Dec2021_Clean.csv")
+rivet_yr2_df = read.csv("data/RIVET_y2_impact_audit_nov2022_clean.csv")
+
 # confirm this individual was reported in previous year before filtering 
 df_rivet_dedup = df_rivet_raw |> 
   filter(last_name != rivet_yr1_df$last_name & first_name != rivet_yr1_df$first_name)
 # check filtering removed the right cases 
-# dim(df_rivet_raw)
-# dim(df_rivet_dedup)
+dim(df_rivet_raw)
+dim(df_rivet_dedup)
+
 # for table down below 
 reported_out = df_rivet_raw |> 
   filter(last_name == rivet_yr1_df$last_name & first_name == rivet_yr1_df$first_name) |>
@@ -81,9 +96,7 @@ reported_out = df_rivet_raw |>
 # remove identifying columns: 
 
 df_rivet = df_rivet_dedup |>
-  select(-first_name, -last_name, -email_address, -dob) |>
-  mutate(id = seq(1,nrow(df_rivet_dedup))) |>
-  relocate(id, everything())
+  select(-first_name, -last_name, -email_address, -dob) 
 ```
 
 ## Data Frame Summary and Data Quality Check
@@ -91,9 +104,7 @@ df_rivet = df_rivet_dedup |>
 Run dfSummary and look at output - look for any outliers or non-standard values
 
 ```{r}
-
-view(dfSummary(df_rivet))
-
+pointblank::scan_data(df_rivet)
 ```
 
 Check for duplicates
@@ -112,7 +123,7 @@ df_rivet <- df_rivet %>%
   mutate(county_of_residence = case_when(
     county_of_residence == 'Alameda' ~ 'Alameda County',
    # county_of_residence == 'San juaquin' ~ 'San Joaquin County',
-    county_of_residence == 'San Francisco' ~ 'San Francisco County',
+   #  county_of_residence == 'San Francisco' ~ 'San Francisco County',
     county_of_residence == 'Santa Clara' ~ 'Santa Clara County',
     T ~ county_of_residence
   ))
@@ -172,20 +183,18 @@ e_out = df_rivet |>
   filter(enrollment_date <= as.Date("2021-01-01") | enrollment_date >= as.Date("2025-10-31")) |>
   select(id) |> n_distinct()
 
-# e <- 0 #assign count to 0 since none fall out of range
-
 #working towards aa not ba
 table(df_rivet$degree_type)
-# 
-# freak <- freq(df_rivet$degree_type) #creates df of frequency table
-# aa <- freak[1,1] 
-
+ 
+# not seeking BA 
 aa_out = df_rivet |>
-  filter(degree_type == "AA") |>
+  filter(degree_type != "BA") |>
  nrow()
 
-#not in correct county of residence - for july  22 audit, 1 person in Merced County
-# freq(df_rivet$county_of_residence)
+# check previous version of data before county correction 
+aa_out_prev = df_rivet |>
+  filter(degree_type != "BA") |>
+ nrow()
 
 c_out = df_rivet |>
   filter(!county_of_residence %in% filter_counties) |>
@@ -229,7 +238,7 @@ excluded <- as.data.frame(way) |>
 
 ```{r}
 # code each case by exclusion criteria (create binaries for if each case is excluded or not based on each exclusion criteria):
-df_rivet = df_rivet |>
+df_rivet_withcriteria = df_rivet |>
   mutate(
     e_out = if_else((enrollment_date <= as.Date("2021-01-01") | enrollment_date >= as.Date("2025-10-31")), 1, 0), # enrollment out of date range 
     aa_out = if_else(degree_type == "AA", 1, 0), # wrong degree type
@@ -239,26 +248,26 @@ df_rivet = df_rivet |>
     withdrawn_out = if_else(degree_type == "BA"  & enrollment_status %in% c("4 Withdrawn"), 1, 0) # not graduated, withdrawn
     )
 
-e_out_df = df_rivet |>
+e_out_df = df_rivet_withcriteria |>
   filter(e_out == 1)
 
-c_out_df = df_rivet |>
+c_out_df = df_rivet_withcriteria |>
   filter(!id %in% c(e_out_df$id), #ids from previous step to avoid double counting
          c_out == 1) # condition
 
-aa_out_df = df_rivet |> 
+aa_out_df = df_rivet_withcriteria |> 
   filter(!id %in% c(e_out_df$id, c_out_df$id), #ids from previous step to avoid double counting
          aa_out == 1) # condition for filter 
 
-active_out_df = df_rivet |>
+active_out_df = df_rivet_withcriteria |>
   filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id), #ids from previous step to avoid double counting
          active_out == 1)  # condition for filter
 
-pause_out_df = df_rivet |>
+pause_out_df = df_rivet_withcriteria |>
   filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id, active_out_df$id), #ids from previous step to avoid double counting
          paused_out == 1) # condition for filter
 
-withdrawn_out_df = df_rivet |>
+withdrawn_out_df = df_rivet_withcriteria |>
   filter(!id %in% c(e_out_df$id, aa_out_df$id, c_out_df$id, 
             active_out_df$id, pause_out_df$id),
          withdrawn_out == 1)
@@ -278,14 +287,13 @@ excluded2 = as.data.frame(way) |>
 # excluded2 is better bc it avoids double counting,
 # but note that order that they are calculated will affect the totals 
 # how many individuals excluded for more than 1 reason?
-multiple_exclusions = df_rivet |>
+multiple_exclusions = df_rivet_withcriteria |>
   mutate(condition_sum = rowSums(across(e_out:withdrawn_out))) |>
   filter(condition_sum >= 2)
 nrow(multiple_exclusions)
 ```
 
 ## make cumulative reporting table
-
 
 
 ```{r}
@@ -295,10 +303,13 @@ nrow(multiple_exclusions)
 ngrad_yr1 = rivet_yr1_df |> nrow()
 
 #  year 2 impact count: 
-ngrad_yr2 = df_rivet_fg |> nrow()
+ngrad_yr2 = rivet_yr2_df |> nrow()
   
+# year 3 impact count: 
+ngrad_yr3 = df_rivet_fg |> nrow()
+
 # cumulative 
-ngrad_total = ngrad_yr1 + ngrad_yr2
+ngrad_total = ngrad_yr1 + ngrad_yr2 + ngrad_yr3
 
 # make cumulative table for report 
 cumulative = tibble(
@@ -308,11 +319,11 @@ cumulative = tibble(
     #   "**Total**"),
       c("Year 1",
       "Year 2",
+      "Year 3",
       "**Total**"),
   `Number of Graduates` = 
-    c(ngrad_yr1, ngrad_yr2, ngrad_total)
+    c(ngrad_yr1, ngrad_yr2, ngrad_yr3, ngrad_total)
 )
-
 
 # create workbook ----
 cumulative_out =  createWorkbook()
@@ -322,9 +333,13 @@ addWorksheet(cumulative_out, sheetName = "RIVET_cumulative")
 # add data 
 writeDataTable(cumulative_out, sheet = "RIVET_cumulative", x = cumulative, tableStyle = "none")
 # save workbook ----
-saveWorkbook(cumulative_out, "data/NPX_RIVET_cumulative_yr2_audit.xlsx", overwrite = TRUE)
+saveWorkbook(cumulative_out, "data/NPX_RIVET_cumulative_yr3_audit.xlsx", overwrite = TRUE)
 
 ```
+
+
+## Select cases for verification 
+
 
 
 ## Save df's for reporting
@@ -346,10 +361,11 @@ saveWorkbook(cumulative_out, "data/NPX_RIVET_cumulative_yr2_audit.xlsx", overwri
 
 ```{r, echo = T}
 #data file 
-write_csv(df_rivet_fg, "data/RIVET_y2_impact_audit_nov2022_clean.csv") #update date
+write_csv(df_rivet_fg, "data/RIVET_y3_interim_audit_july2023_clean.csv") #update date
 
 #removal reason file
-write_csv(excluded2,"data/RIVET_y2_impact_audit_nov2022_excluded.csv") #update date
+write_csv(excluded2,"data/RIVET_y3_impact_audit_july2022_excluded.csv") #update date
 
 ```
+
 
