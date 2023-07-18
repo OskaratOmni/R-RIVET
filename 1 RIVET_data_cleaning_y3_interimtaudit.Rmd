@@ -62,9 +62,6 @@ df_rivet_raw = read_xlsx("../Secure/Rivet School Yr 3 Interim Audit/NPX Omni Yea
 #  mutate(enrollment_date = lubridate::mdy(enrollment_date)) |>
   mutate(id = row_number()) |>
   relocate(id, everything()) 
-
-
-
 ```
 
 ## check for cases from previous audit 
@@ -87,7 +84,7 @@ reported_out = df_rivet_raw |>
 ```
 
 
-```{r data, echo=TRUE, eval = TRUE}
+```{r echo=TRUE, eval = TRUE}
 # delete empty rows
 #df_rivet <- df_rivet %>% 
 #  filter(!is.na(first_name))
@@ -104,7 +101,7 @@ df_rivet = df_rivet_dedup |>
 Run dfSummary and look at output - look for any outliers or non-standard values
 
 ```{r}
-pointblank::scan_data(df_rivet)
+#pointblank::scan_data(df_rivet)
 ```
 
 Check for duplicates
@@ -178,50 +175,8 @@ df_rivet_fg <- df_rivet %>%
 
 # find those enrolled outside of defined period: 
 # from January 1, 2021  to October 31, 2025
- 
-e_out = df_rivet |>
-  filter(enrollment_date <= as.Date("2021-01-01") | enrollment_date >= as.Date("2025-10-31")) |>
-  select(id) |> n_distinct()
 
-#working towards aa not ba
-table(df_rivet$degree_type)
- 
-# not seeking BA 
-aa_out = df_rivet |>
-  filter(degree_type != "BA") |>
- nrow()
-
-# check previous version of data before county correction 
-aa_out_prev = df_rivet |>
-  filter(degree_type != "BA") |>
- nrow()
-
-c_out = df_rivet |>
-  filter(!county_of_residence %in% filter_counties) |>
-  nrow()
-
-#not yet graduated - only counting active and paused
-active_out =
-  df_rivet %>% 
-  filter(degree_type == "BA",
-         enrollment_status %in% c("1 Active")) %>% 
-  nrow()
-  
-paused_out = 
-df_rivet %>% 
-  filter(degree_type == "BA",
-         enrollment_status %in% c("3 Paused A", "3 Paused B")) %>% 
-  nrow()
-
-withdrawn_out = 
-df_rivet %>% 
-  filter(degree_type == "BA",
-         enrollment_status %in% c("4 Withdrawn")) %>% 
-  nrow()  
-
-total_out <- sum(e_out,aa_out,c_out,active_out, paused_out, withdrawn_out) #total number removed
-
-# create df with above values
+# create df with exclusion values
 way <- c("Student enrolled before January 1, 2021 or after October 31, 2025", 
          "Student lives outside of the Greater Bay Area region", 
          "Student is not currently pursuing a bachelor's degree", 
@@ -229,10 +184,6 @@ way <- c("Student enrolled before January 1, 2021 or after October 31, 2025",
          "Student has paused progress and not yet graduated", 
          'Student has withdrawn from program', 
          'Total Excluded')
-#count <- c(e,c,aa,g,wd,t)
-
-excluded <- as.data.frame(way) |>
-  mutate(`Number Excluded` = c(e_out, c_out, aa_out, active_out, paused_out, withdrawn_out, total_out)) |> rename('Reason for Exclusion' = way)
 
 ```
 
@@ -284,7 +235,7 @@ excluded2 = as.data.frame(way) |>
                                 sum(ex_out_vec))) |> 
            rename('Reason for Exclusion' = way)
 
-# excluded2 is better bc it avoids double counting,
+# excluded2 avoids double counting,
 # but note that order that they are calculated will affect the totals 
 # how many individuals excluded for more than 1 reason?
 multiple_exclusions = df_rivet_withcriteria |>
